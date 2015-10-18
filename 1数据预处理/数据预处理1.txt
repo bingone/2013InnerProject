@@ -1,0 +1,206 @@
+/*
+	时间 2013.7.12
+	说明：[]内依次为评论者ID、时间、其他用户认为该评论有用数、其他用户评论数、该用户评价分数
+	默认原始数据的位置   E:\fake reviews\原始数据\data1下  
+	默认保存位置 orginal[]="E:\\fake reviews\\原始数据\\data2\\"; 修改两处即可
+	数据量可能很大
+        在VS中调用API要使用宽字符
+	全部数据都放入一个文件夹中
+*/
+
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <windows.h>
+#include <conio.h>
+void writefile(long filesizel, char *pBuffer,DWORD RSize );
+int main()
+{
+	long   fileSizel,count=0;
+	DWORD fileSizeh;
+	char *pBuffer;
+	DWORD RSize=1;
+    HANDLE hOpenFile = (HANDLE)CreateFile("E:\\fake reviews\\原始数据\\reviewsNew.txt", GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, NULL, NULL); 
+    if (hOpenFile == INVALID_HANDLE_VALUE) 
+    { 
+        hOpenFile = NULL; 
+        MessageBoxA(NULL, "Can not open the file", "Play wav ", MB_OK); 
+    } 
+    fileSizel = GetFileSize(hOpenFile,&fileSizeh); 
+    pBuffer = (CHAR *) malloc(0x20000000);  
+	while(RSize)	
+	{
+		ReadFile(hOpenFile, pBuffer, 0x20000000, &RSize, NULL);
+		writefile(0x20000000, pBuffer, RSize );
+			
+	}
+	free(pBuffer);
+	CloseHandle(hOpenFile);
+
+
+return 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+void writefile(long filesizel, char *pBuffer,DWORD RSize )// 此处的temp指的是上个块结束时候的未读取完的部分 -1指的用户名 -2指的文件名
+{
+	static int preflag=0;
+	static char temp[20],name[20];
+	static char orginal[]="E:\\fake reviews\\原始数据\\data2\\";
+	int  flag, i=0;
+	char filename[100];	
+	long count=0;
+	char ch, temp1[20];
+	FILE *fpdes,*fp1;
+	fp1=fopen("index.txt","a+");
+	if(!RSize)
+		return;
+	i=preflag;
+	if(preflag>0)
+	{
+		flag=preflag;
+		strcpy(temp1,temp);
+		strcpy(filename,orginal);
+		strcat(filename,temp);
+		strcat(filename,".txt");
+		if((fpdes=fopen(temp,"ab"))==NULL)
+			if((fpdes=fopen(temp,"a+b"))==NULL)
+				exit(0);
+		ch=temp[strlen(temp)-1];
+		goto attach;
+	}
+	else if(preflag==-1&&!(i=strlen(temp)))
+	{
+		while(pBuffer[count]!='\t')
+			name[i]=pBuffer[count++];
+				while(pBuffer[count]!='\t')
+			temp[i]=pBuffer[count++];
+	}
+	else if(preflag==-2&&!(i=strlen(temp)))
+		while(pBuffer[count]!='\t')
+			temp[i]=pBuffer[count++];
+	else
+	{
+		i=0;
+		while(pBuffer[count]!='\t')
+			name[i++]=pBuffer[count++];
+		name[i]='\0';
+		i=0;
+		count++;
+		while(pBuffer[count]!='\t')
+			temp[i++]=pBuffer[count++];
+		temp[i]='\0';
+	}
+	while(1)
+	{		
+		strcpy(temp1,temp);
+		strcpy(filename,orginal);
+		strcat(filename,temp);
+		strcat(filename,".txt");
+		if((fpdes=fopen(filename,"ab"))==NULL)
+			if((fpdes=fopen(filename,"a+b"))==NULL)
+				exit(0);
+		
+		do
+		{
+			flag=0;
+
+			while((unsigned)count<=RSize)
+			{
+				ch=pBuffer[count++];
+attach:			if(ch=='\t')
+				{
+					flag++;
+					if(flag!=1&&flag!=6)
+						{
+						fputc(']',fpdes);
+						fputc('[',fpdes);
+					}
+					else if(flag==1)
+					{
+						fputc('[',fpdes);
+						fputs(name,fpdes);
+						fputc(']',fpdes);
+						fputc('[',fpdes);
+					}
+					else 
+						fputc(']',fpdes);
+				}
+				else
+					fputc(ch,fpdes);
+				while(flag==6)
+				{
+					if((unsigned)count>=RSize)
+						break;
+				/*	if(count==268435000)
+						getch();*/
+					ch=pBuffer[count++];
+					if(ch=='\n')
+					{
+						flag=0;
+						fputc(13,fpdes);
+						fputc(ch,fpdes);
+						fputc(13,fpdes);
+						fputc(ch,fpdes);
+					}
+					else if(ch<32)
+						NULL;
+					else
+						fputc(ch,fpdes);
+				}
+				if(!flag)
+					break;
+			}
+			i=0;
+			if((unsigned)count>=RSize)
+				break;
+			while(1)
+			{
+				if((unsigned)count>=RSize)
+				{
+					if(!flag)
+					{	name[i]='\0'; flag=-1;break;}
+					else if(flag==-2)
+					{	temp[i]='\0';break;}
+				}
+				ch=pBuffer[count++];
+				if(!flag && ch=='\t')
+				{
+					flag=-2;
+					name[i]='\0';
+					i=0;
+					continue;
+				}
+				if(flag==-2 && ch=='\t')
+				{
+					flag=0;
+					temp[i]='\0';
+					break;
+				}
+				if(!flag)
+					name[i++]=ch;
+				else
+					temp[i++]=ch;
+			}
+			if((unsigned)count>=RSize)
+				break;
+			count--;
+		}while(strcmp(temp1,temp)==0);
+		fclose(fpdes);
+		if((unsigned)count>=RSize)
+			break;		
+		puts(temp);
+		fputs(temp,fp1);fputc(13,fp1);fputc('\n',fp1);
+	}
+	preflag=flag;
+	fclose(fp1);
+}

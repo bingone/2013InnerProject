@@ -1,0 +1,72 @@
+#include <conio.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include <time.h>
+#include <direct.h>
+#include <string.h>
+//文件分至个文件夹中
+
+int main()
+{
+	int i=0,j;
+	char ch=0;
+	unsigned long count=0;
+	FILE *fdir;
+	char locate[]="E:\\fake\042 \042reviews\\原始数据\\select\\";   //原始数据存放
+	char locate0[]="E:\\fake reviews\\原始数据\\newdata\\";			//放入文件夹中 newdata为后面mkdir新建 若文件夹有空格使用\042替换，若无仅使用该字符串
+	char locate1[]="E:\\fake\042 \042reviews\\原始数据\\newdata\\";
+	char fuzhi[]="copy ";
+	char dirpath[100];
+	char filename[50];
+	char souname[200];
+	char temp[100];
+	char cmd[200];
+	mkdir(locate0);
+	/*********************************************************创建文件夹****/
+	system("dir E:\\fake\042 \042reviews\\原始数据\\select\\  /b > E:dir.txt"); //把原始文件夹里面的文件名放入E:dir.txt中，
+	if((fdir=fopen("E:\\dir.txt","a+"))==NULL)
+		exit(0);
+	while(i++<100)																//文件夹个数
+	{
+		sprintf(temp,"%d",i);
+		strcpy(dirpath,locate0);	
+		strcat(dirpath,temp);
+		mkdir(dirpath);
+		strcpy(dirpath,locate1);	
+		strcat(dirpath,temp);
+		strcat(dirpath,"\\");
+		count=0;
+		while(count++<12000)													//每个文件夹中的文件数目
+		{
+			j=0;
+			while(1)
+			{
+				ch=fgetc(fdir);
+				if(ch==10 || feof(fdir))
+					break;
+				if(ch<32)
+					continue;		
+				filename[j++]=ch;
+			}
+			filename[j]='\0';
+			puts(filename);			
+			if(feof(fdir))
+				break;			
+			strcpy(souname,locate);
+			strcat(souname,filename);
+			strcpy(cmd,fuzhi);
+			strcat(cmd,souname);
+			strcat(cmd," ");
+			strcat(cmd,dirpath);
+			strcat(cmd,filename);
+			system(cmd);
+		}
+		if(feof(fdir))
+			break;
+	
+	}
+	
+
+	return 0;
+}
